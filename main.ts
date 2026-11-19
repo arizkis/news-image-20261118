@@ -1,54 +1,65 @@
-// news-image-20261118 — make.fun entry point.
-// Copies the bundled entry.png into the output directory.
-// Runs directly on Node 22 (`node main.ts`); built-in modules only.
+// news-image-20261118 — Round 3 entry program ("Hermes V4" broadsheet).
+// Copies the packaged image (entry.png) into the make.fun output directory.
+// Runs directly under Node 22: node main.ts
+// Uses only Node built-in modules.
 
-import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { copyFileSync, existsSync, mkdirSync, statSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const IMAGE = 'entry.png';
-
-// Look for the image next to this program file first, then in the cwd.
-const besideProgram = join(dirname(fileURLToPath(import.meta.url)), IMAGE);
-const inCwd = resolve(IMAGE);
-const source = existsSync(besideProgram) ? besideProgram : inCwd;
-
-if (!existsSync(source)) {
-  console.error(
-    `fatal: ${IMAGE} is missing — looked next to main.ts (${besideProgram}) ` +
-      `and in the working directory (${inCwd}). Nothing was copied.`,
-  );
+function fail(message: string): never {
+  process.stderr.write(`error: ${message}\n`);
   process.exit(1);
 }
 
-function describe(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+// Locate entry.png next to this program file; fall back to the working directory.
+const programDir = dirname(fileURLToPath(import.meta.url));
+const candidates = [join(programDir, "entry.png"), resolve(process.cwd(), "entry.png")];
+const source = candidates.find((p) => existsSync(p));
+if (!source) {
+  fail(
+    `entry.png not found. Looked in:\n  ${candidates.join("\n  ")}\n` +
+      "The image must sit next to main.ts (or in the working directory)."
+  );
 }
 
-const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+let sourceSize: number;
+try {
+  sourceSize = statSync(source).size;
+} catch (err) {
+  fail(`cannot stat source image ${source}: ${(err as Error).message}`);
+}
+if (sourceSize === 0) {
+  fail(`source image ${source} is empty (0 bytes)`);
+}
+
+// Output directory: MAKEFUN_OUTPUT_DIR if set, otherwise /output.
+const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
 try {
   mkdirSync(outputDir, { recursive: true });
 } catch (err) {
-  console.error(`fatal: cannot create output directory ${outputDir}: ${describe(err)}`);
-  process.exit(1);
+  fail(`cannot create output directory ${outputDir}: ${(err as Error).message}`);
 }
+const destination = join(outputDir, "entry.png");
 
-const destination = join(outputDir, IMAGE);
 try {
   copyFileSync(source, destination);
 } catch (err) {
-  console.error(`fatal: copy failed (${source} -> ${destination}): ${describe(err)}`);
-  process.exit(1);
+  fail(`copy failed (${source} -> ${destination}): ${(err as Error).message}`);
 }
 
-// Integrity check: the destination must match the source byte for byte in size.
-const sourceBytes = statSync(source).size;
-const copiedBytes = statSync(destination).size;
-if (sourceBytes !== copiedBytes) {
-  console.error(
-    `fatal: size mismatch after copy — source ${sourceBytes} bytes, destination ${copiedBytes} bytes.`,
+// Post-copy integrity check: the destination must exist and match the source size.
+let copiedSize: number;
+try {
+  copiedSize = statSync(destination).size;
+} catch (err) {
+  fail(`copied file missing or unreadable at ${destination}: ${(err as Error).message}`);
+}
+if (copiedSize !== sourceSize) {
+  fail(
+    `integrity check failed: ${destination} is ${copiedSize} bytes, ` +
+      `expected ${sourceSize} bytes (source: ${source})`
   );
-  process.exit(1);
 }
 
-console.log(`copied ${copiedBytes} bytes: ${source} -> ${destination}`);
+console.log(`copied ${source} -> ${destination} (${copiedSize} bytes, size check OK)`);
