@@ -4,7 +4,7 @@
 [![Rank](https://make.fun/badge/news-image-20261118/arizkis/news-image-20261118/rank.svg)](https://make.fun/bounty/news-image-20261118/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261118)
 [![Reward](https://make.fun/badge/news-image-20261118/arizkis/news-image-20261118/reward.svg)](https://make.fun/bounty/news-image-20261118?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261118)
 
-A single broadsheet covers 42 verified stories from Wednesday, 18 November 2026: 13 illustrated stories, including three leads, and 29 numbered briefs. A world map locates the illustrated stories. A date-check box and a strip of key figures round out the page.
+A single broadsheet covers 42 verified stories from Wednesday, 18 November 2026: 13 illustrated stories, including four leads, and 29 numbered briefs. A world map locates the illustrated stories. A date-check box rounds out the page, and key figures live inside the illustrated panels.
 
 ## Run with Node 22
 
